@@ -526,7 +526,7 @@ function SkyNavAI() {
 
         const userMessage = {
             role: "user",
-            text: input
+            text: input,
         };
 
         const updatedMessages = [...messages, userMessage];
@@ -538,32 +538,34 @@ function SkyNavAI() {
             const res = await fetch("http://localhost:5000/chat", {
                 method: "POST",
                 headers: {
-                    "Content-Type": "application/json"
+                    "Content-Type": "application/json",
                 },
                 body: JSON.stringify({
-                    messages: updatedMessages.map(m => ({
+                    messages: updatedMessages.map((m) => ({
                         role: m.role,
-                        content: m.text
-                    }))
-                })
+                        content: m.text,
+                    })),
+                }),
             });
+
+            if (!res.ok) throw new Error("Server error");
 
             const data = await res.json();
 
-            const assistantMessage = {
-                role: "assistant",
-                text: data.reply
-            };
-
-            setMessages(prev => [...prev, assistantMessage]);
-
-        } catch (err) {
-            setMessages(prev => [
+            setMessages((prev) => [
                 ...prev,
                 {
                     role: "assistant",
-                    text: "AI server is offline."
-                }
+                    text: data.reply,
+                },
+            ]);
+        } catch (err) {
+            setMessages((prev) => [
+                ...prev,
+                {
+                    role: "assistant",
+                    text: "Backend not running or OpenAI error.",
+                },
             ]);
         }
     };

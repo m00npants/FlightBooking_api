@@ -250,71 +250,53 @@ function SkyNavAI() {
     const [input, setInput] = useState("");
 
     // SEND MESSAGE
-    const handleSend = () => {
-
+    const handleSend = async () => {
         if (!input.trim()) return;
 
         const userMessage = {
             role: "user",
-            text: input
+            text: input,
         };
 
-        let aiReply =
-            "I can help you with flights, prices and travel recommendations ✈";
+        const updatedMessages = [...messages, userMessage];
 
-        // SIMPLE AI RESPONSES
-        if (
-            input.toLowerCase().includes("tokyo")
-        ) {
-
-            aiReply =
-                "Flights to Tokyo currently start from $742 next week ✈";
-        }
-
-        else if (
-            input.toLowerCase().includes("cheap")
-        ) {
-
-            aiReply =
-                "The cheapest flights are usually on Tuesdays and Wednesdays.";
-        }
-
-        else if (
-            input.toLowerCase().includes("booking")
-        ) {
-
-            aiReply =
-                "You can manage your bookings from the Bookings page.";
-        }
-
-        else if (
-            input.toLowerCase().includes("hello")
-        ) {
-
-            aiReply =
-                "Hello 👋 How can I help you today?";
-        }
-
-        else if (
-            input.toLowerCase().includes("flight")
-        ) {
-
-            aiReply =
-                "I can help you compare flights and destinations instantly.";
-        }
-
-        const assistantMessage = {
-            role: "assistant",
-            text: aiReply
-        };
-
-        setMessages([
-            ...messages,
-            userMessage,
-            assistantMessage
-        ]);
-
+        setMessages(updatedMessages);
         setInput("");
+
+        try {
+            const res = await fetch("http://localhost:5000/chat", {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                },
+                body: JSON.stringify({
+                    messages: updatedMessages.map((m) => ({
+                        role: m.role,
+                        content: m.text,
+                    })),
+                }),
+            });
+
+            if (!res.ok) throw new Error("Server error");
+
+            const data = await res.json();
+
+            setMessages((prev) => [
+                ...prev,
+                {
+                    role: "assistant",
+                    text: data.reply,
+                },
+            ]);
+        } catch (err) {
+            setMessages((prev) => [
+                ...prev,
+                {
+                    role: "assistant",
+                    text: "Backend not running or OpenAI error.",
+                },
+            ]);
+        }
     };
 
     return (
