@@ -1,8 +1,8 @@
 ![Lexicon Logo](https://lexicongruppen.se/media/wi5hphtd/lexicon-logo.svg)
-# ✈️ Flight Reservation – Project Test
-# ✈️ Flight Reservation – AI Powered Booking System
+# ✈️ Flight Reservation – Project Test and AI Powered Booking System
 
-![Lexicon Logo](https://lexicongruppen.se/media/wi5hphtd/lexicon-logo.svg)
+
+
 
 ---
 
