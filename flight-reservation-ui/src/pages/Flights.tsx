@@ -4,37 +4,76 @@ import { getAvailableFlights } from "../api/flights";
 
 export default function Available() {
     const [flights, setFlights] = useState<any[]>([]);
-
     const navigate = useNavigate();
 
-    // BOOK FUNCTION
-    const handleBook = (flight: any) => {
-        const existing =
-            JSON.parse(localStorage.getItem("bookings") || "[]");
+    const [selectedFlight, setSelectedFlight] = useState<any>(null);
 
-        const updated = [...existing, flight];
-
-        localStorage.setItem(
-            "bookings",
-            JSON.stringify(updated)
-        );
-
-        navigate("/book");
-    };
+    const [passengers, setPassengers] = useState<any[]>([
+        { name: "", seatClass: "economy", extraLuggage: false }
+    ]);
 
     useEffect(() => {
         getAvailableFlights().then(setFlights);
     }, []);
 
+    // add passenger row
+    const addPassenger = () => {
+        setPassengers([
+            ...passengers,
+            { name: "", seatClass: "economy", extraLuggage: false }
+        ]);
+    };
+
+    // update passenger
+    const updatePassenger = (index: number, field: string, value: any) => {
+        const updated = [...passengers];
+        updated[index][field] = value;
+        setPassengers(updated);
+    };
+
+    // BOOK FLIGHT
+    const handleConfirmBooking = () => {
+        if (!selectedFlight) return;
+
+        const existing = JSON.parse(localStorage.getItem("bookings") || "[]");
+
+        const newBooking = {
+            bookingId: Date.now(),
+
+            id: selectedFlight.id,
+            origin: selectedFlight.origin,
+            destination: selectedFlight.destination,
+
+            date: selectedFlight.date || "2026-01-01",
+            time: selectedFlight.time || "10:00",
+            gate: selectedFlight.gate || "A1",
+            price: selectedFlight.price || "$412",
+
+            passengers
+        };
+
+        localStorage.setItem(
+            "bookings",
+            JSON.stringify([...existing, newBooking])
+        );
+
+        setSelectedFlight(null);
+        setPassengers([{ name: "", seatClass: "economy", extraLuggage: false }]);
+
+        navigate("/book");
+    };
+
     return (
-        <div className="bg-[#f7fafd] min-h-screen text-[#181c1e]">
+        <div className="bg-[#f7fafd] min-h-screen">
 
             {/* NAVBAR */}
             <header className="fixed top-0 left-0 w-full z-50 bg-white/90 backdrop-blur border-b border-gray-200">
+
                 <div className="max-w-7xl mx-auto px-6 h-16 flex items-center justify-between">
 
                     {/* LOGO */}
                     <div className="flex items-center gap-3">
+
                         <div className="w-9 h-9 rounded-full bg-[#000f22] flex items-center justify-center text-white">
                             ✈
                         </div>
@@ -78,11 +117,13 @@ export default function Available() {
 
                     {/* PROFILE */}
                     <div className="flex items-center gap-4">
+
                         <button className="text-gray-500 hover:text-black">
                             🔔
                         </button>
 
                         <div className="w-10 h-10 rounded-full overflow-hidden border">
+
                             <img
                                 src="https://i.pravatar.cc/100"
                                 alt="profile"
@@ -93,183 +134,344 @@ export default function Available() {
                 </div>
             </header>
 
-            {/* PAGE CONTENT */}
-            <section className="max-w-7xl mx-auto px-6 pt-28 pb-20">
+            {/* FLIGHTS */}
+            <div className="max-w-7xl mx-auto px-6 pt-28 pb-20">
+                <h1 className="text-4xl font-black">Available Flights</h1>
 
-                {/* HEADER */}
-                <div className="mb-10">
-                    <p className="uppercase tracking-widest text-cyan-600 text-sm font-bold">
-                        Live Inventory
-                    </p>
-
-                    <h1 className="text-4xl font-black text-[#000f22] mt-2">
-                        Available Flights
-                    </h1>
-
-                    <p className="text-gray-500 mt-2 max-w-xl">
-                        Browse real-time available routes and instantly
-                        book the best options.
-                    </p>
-                </div>
-
-                {/* GRID */}
-                <div className="grid md:grid-cols-3 gap-6">
-
+                <div className="grid md:grid-cols-3 gap-6 mt-10">
                     {flights.map((f: any) => (
-                        <div
-                            key={f.id}
-                            className="bg-white rounded-3xl p-6 shadow-lg border hover:shadow-xl transition"
-                        >
+                        <div key={f.id} className="bg-white p-6 rounded-3xl border">
 
-                            {/* ROUTE */}
-                            <div className="flex items-center justify-between">
+                            <h2 className="font-black text-xl">
+                                {f.origin} → {f.destination}
+                            </h2>
 
-                                <div>
-                                    <p className="text-xs uppercase text-gray-400 font-bold">
-                                        Origin
-                                    </p>
+                            <p className="text-sm text-gray-400 mt-2">
+                                Flight ID: {f.id}
+                            </p>
 
-                                    <h3 className="text-xl font-black text-[#000f22]">
-                                        {f.origin}
-                                    </h3>
-                                </div>
-
-                                <div className="text-cyan-500 text-xl font-black">
-                                    →
-                                </div>
-
-                                <div className="text-right">
-                                    <p className="text-xs uppercase text-gray-400 font-bold">
-                                        Destination
-                                    </p>
-
-                                    <h3 className="text-xl font-black text-[#000f22]">
-                                        {f.destination}
-                                    </h3>
-                                </div>
-                            </div>
-
-                            {/* FLIGHT ID */}
-                            <div className="mt-6 bg-gray-50 rounded-2xl p-4 border">
-
-                                <p className="text-xs text-gray-400 uppercase">
-                                    Flight ID
-                                </p>
-
-                                <p className="font-bold text-[#000f22] mt-1">
-                                    {f.id}
-                                </p>
-                            </div>
-
-                            {/* BOOK BUTTON */}
                             <button
-                                onClick={() => handleBook(f)}
-                                className="w-full mt-6 bg-cyan-500 hover:bg-cyan-400 transition text-white py-3 rounded-xl font-bold"
+                                onClick={() => setSelectedFlight(f)}
+                                className="w-full mt-6 bg-cyan-500 text-white py-3 rounded-xl font-bold"
                             >
                                 Book Flight
                             </button>
                         </div>
                     ))}
                 </div>
+            </div>
 
-                {/* EMPTY STATE */}
-                {flights.length === 0 && (
-                    <div className="text-center py-20 text-gray-500">
-                        No available flights at the moment.
+            {/* BOOKING MODAL */}
+            {selectedFlight && (
+                <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-[999]">
+
+                    <div className="bg-white w-[520px] rounded-3xl p-6">
+
+                        <h2 className="text-2xl font-black">Book Flight</h2>
+
+                        <p className="text-sm text-gray-500">
+                            {selectedFlight.origin} → {selectedFlight.destination}
+                        </p>
+
+                        {/* PASSENGERS */}
+                        <div className="mt-5 space-y-4 max-h-[300px] overflow-y-auto">
+
+                            {passengers.map((p, i) => (
+                                <div key={i} className="border rounded-xl p-3">
+
+                                    <input
+                                        className="w-full border p-2 rounded-lg"
+                                        placeholder="Passenger name"
+                                        value={p.name}
+                                        onChange={(e) =>
+                                            updatePassenger(i, "name", e.target.value)
+                                        }
+                                    />
+
+                                    <select
+                                        className="w-full mt-2 border p-2 rounded-lg"
+                                        value={p.seatClass}
+                                        onChange={(e) =>
+                                            updatePassenger(i, "seatClass", e.target.value)
+                                        }
+                                    >
+                                        <option value="economy">Economy</option>
+                                        <option value="first">First Class</option>
+                                    </select>
+
+                                    <label className="flex justify-between mt-2 text-sm">
+                                        Extra Luggage
+                                        <input
+                                            type="checkbox"
+                                            checked={p.extraLuggage}
+                                            onChange={(e) =>
+                                                updatePassenger(i, "extraLuggage", e.target.checked)
+                                            }
+                                        />
+                                    </label>
+                                </div>
+                            ))}
+                        </div>
+
+                        <button
+                            onClick={addPassenger}
+                            className="mt-4 text-cyan-600 font-bold"
+                        >
+                            + Add Passenger
+                        </button>
+
+                        {/* ACTIONS */}
+                        <div className="flex gap-3 mt-6">
+
+                            <button
+                                onClick={() => setSelectedFlight(null)}
+                                className="flex-1 bg-gray-200 py-3 rounded-xl font-bold"
+                            >
+                                Cancel
+                            </button>
+
+                            <button
+                                onClick={handleConfirmBooking}
+                                className="flex-1 bg-cyan-500 text-white py-3 rounded-xl font-bold"
+                            >
+                                Confirm
+                            </button>
+                        </div>
                     </div>
-                )}
+                </div>
+            )}
 
-                {/* CLIPPY */}
-                <PaperclipAssistant />
-            </section>
+            {/* CHATBOT (SAME STYLE AS HOME) */}
+            <SkyNavAI />
         </div>
     );
 }
 
-/* MICROSOFT CLIPPY */
+/* ================= CHATBOT (FROM HOME PAGE) ================= */
 
-function PaperclipAssistant() {
+
+/* AI CHATBOT */
+
+function SkyNavAI() {
+
+    const [open, setOpen] = useState(false);
+
+    const [messages, setMessages] = useState([
+        {
+            role: "assistant",
+            text: "Hello 👋 I can help you search flights, compare prices and manage bookings."
+        }
+    ]);
+
+    const [input, setInput] = useState("");
+
+    // SEND MESSAGE
+    const handleSend = () => {
+
+        if (!input.trim()) return;
+
+        const userMessage = {
+            role: "user",
+            text: input
+        };
+
+        let aiReply =
+            "I can help you with flights, prices and travel recommendations ✈";
+
+        // SIMPLE AI RESPONSES
+        if (
+            input.toLowerCase().includes("tokyo")
+        ) {
+
+            aiReply =
+                "Flights to Tokyo currently start from $742 next week ✈";
+        }
+
+        else if (
+            input.toLowerCase().includes("cheap")
+        ) {
+
+            aiReply =
+                "The cheapest flights are usually on Tuesdays and Wednesdays.";
+        }
+
+        else if (
+            input.toLowerCase().includes("booking")
+        ) {
+
+            aiReply =
+                "You can manage your bookings from the Bookings page.";
+        }
+
+        else if (
+            input.toLowerCase().includes("hello")
+        ) {
+
+            aiReply =
+                "Hello 👋 How can I help you today?";
+        }
+
+        else if (
+            input.toLowerCase().includes("flight")
+        ) {
+
+            aiReply =
+                "I can help you compare flights and destinations instantly.";
+        }
+
+        const assistantMessage = {
+            role: "assistant",
+            text: aiReply
+        };
+
+        setMessages([
+            ...messages,
+            userMessage,
+            assistantMessage
+        ]);
+
+        setInput("");
+    };
+
     return (
-        <div className="fixed bottom-5 right-5 z-[999] flex items-end gap-4 pointer-events-none">
+        <div className="fixed bottom-6 right-6 z-[999]">
 
-            {/* SPEECH BUBBLE */}
-            <div className="relative bg-[#fff6bf] border-2 border-black rounded-xl px-5 py-4 shadow-[4px_4px_0px_rgba(0,0,0,0.25)] w-[250px] animate-[clippyBubble_3s_ease-in-out_infinite]">
+            {/* CHAT WINDOW */}
+            {open && (
 
-                <p className="font-bold text-[13px] text-black leading-snug">
-                    It looks like you're booking a flight.
-                </p>
+                <div className="w-[380px] h-[560px] bg-white rounded-[32px] shadow-2xl border overflow-hidden mb-5 flex flex-col animate-[fadeIn_.2s_ease]">
 
-                <p className="text-[11px] text-gray-700 mt-1">
-                    Would you like help finding cheaper tickets?
-                </p>
+                    {/* HEADER */}
+                    <div className="bg-[#000f22] text-white p-5 flex items-center justify-between">
 
-                {/* TAIL */}
-                <div className="absolute bottom-5 -right-[10px] w-5 h-5 bg-[#fff6bf] border-r-2 border-b-2 border-black rotate-[-45deg]" />
-            </div>
+                        <div>
 
-            {/* CLIPPY */}
-            <div className="relative w-[110px] h-[150px] animate-[clippyFloat_2.4s_ease-in-out_infinite]">
+                            <h3 className="font-black text-xl">
+                                SkyNav AI
+                            </h3>
 
-                {/* MAIN BODY */}
-                <div className="absolute inset-0 rounded-[55px] rotate-[18deg] border-[10px] border-[#8b8b8b] bg-gradient-to-br from-white via-[#d6d6d6] to-[#9f9f9f] shadow-[0_10px_20px_rgba(0,0,0,0.25)]" />
+                            <p className="text-xs text-cyan-300">
+                                AI Flight Assistant Online
+                            </p>
+                        </div>
 
-                {/* INNER LOOP */}
-                <div className="absolute top-[28px] left-[28px] right-[28px] bottom-[28px] rounded-[40px] border-[9px] border-[#6e6e6e]" />
+                        <button
+                            onClick={() => setOpen(false)}
+                            className="text-2xl hover:text-cyan-300 transition"
+                        >
+                            ×
+                        </button>
+                    </div>
 
-                {/* OPEN GAP */}
-                <div className="absolute bottom-[10px] left-1/2 -translate-x-1/2 w-[40px] h-[36px] bg-[#f7fafd] rounded-full z-10" />
+                    {/* MESSAGES */}
+                    <div className="flex-1 p-5 overflow-y-auto bg-[#f7fafd] space-y-4">
 
-                {/* LEFT EYE */}
-                <div className="absolute top-[48px] left-[30px] z-20">
-                    <div className="w-[18px] h-[22px] bg-white border-[2px] border-black rounded-full flex items-center justify-center">
-                        <div className="w-[7px] h-[7px] bg-black rounded-full" />
+                        {messages.map((message, index) => (
+
+                            <div
+                                key={index}
+                                className={`max-w-[85%] p-4 rounded-2xl text-sm ${
+                                    message.role === "user"
+                                        ? "ml-auto bg-cyan-500 text-white"
+                                        : "bg-white shadow-sm text-gray-800"
+                                }`}
+                            >
+                                {message.text}
+                            </div>
+                        ))}
+                    </div>
+
+                    {/* INPUT */}
+                    <div className="p-4 border-t bg-white flex gap-3">
+
+                        <input
+                            type="text"
+                            value={input}
+                            onChange={(e) =>
+                                setInput(e.target.value)
+                            }
+                            onKeyDown={(e) => {
+                                if (e.key === "Enter") {
+                                    handleSend();
+                                }
+                            }}
+                            placeholder="Ask SkyNav AI..."
+                            className="flex-1 border rounded-2xl px-4 py-3 outline-none focus:border-cyan-500"
+                        />
+
+                        <button
+                            onClick={handleSend}
+                            className="bg-cyan-500 hover:bg-cyan-400 transition text-white px-5 rounded-2xl font-bold"
+                        >
+                            Send
+                        </button>
                     </div>
                 </div>
+            )}
 
-                {/* RIGHT EYE */}
-                <div className="absolute top-[48px] right-[30px] z-20">
-                    <div className="w-[18px] h-[22px] bg-white border-[2px] border-black rounded-full flex items-center justify-center">
-                        <div className="w-[7px] h-[7px] bg-black rounded-full" />
+            {/* CHAT BUBBLE */}
+            {!open && (
+
+                <div className="absolute bottom-24 right-0 animate-[floatBubble_3s_ease-in-out_infinite]">
+
+                    <div className="relative bg-white border border-gray-200 rounded-2xl shadow-2xl px-5 py-4 w-[260px]">
+
+                        <div className="flex items-center gap-2 mb-2">
+
+                            <div className="w-2.5 h-2.5 rounded-full bg-green-500 animate-pulse" />
+
+                            <p className="text-xs font-bold text-green-600">
+                                AI Assistant Online
+                            </p>
+                        </div>
+
+                        <p className="font-black text-[#000f22] text-sm">
+                            Need help with your booking?
+                        </p>
+
+                        <p className="text-gray-500 text-xs mt-1 leading-relaxed">
+                            Ask me about tickets flights and prices ✈
+                        </p>
+
+                        <div className="absolute bottom-[-7px] right-8 w-4 h-4 bg-white border-r border-b border-gray-200 rotate-45" />
                     </div>
                 </div>
+            )}
 
-                {/* EYEBROWS */}
-                <div className="absolute top-[40px] left-[27px] w-[20px] h-[3px] bg-black rounded-full rotate-[12deg] z-20" />
+            {/* BUTTON */}
+            <button
+                onClick={() => setOpen(!open)}
+                className="relative w-16 h-16 rounded-full bg-cyan-500 hover:bg-cyan-400 transition shadow-2xl flex items-center justify-center text-white text-3xl"
+            >
 
-                <div className="absolute top-[40px] right-[27px] w-[20px] h-[3px] bg-black rounded-full rotate-[-12deg] z-20" />
+                {/* PING EFFECT */}
+                <span className="absolute inset-0 rounded-full bg-cyan-400 animate-ping opacity-30" />
 
-                {/* SMILE */}
-                <div className="absolute top-[88px] left-1/2 -translate-x-1/2 z-20">
-                    <div className="w-[28px] h-[12px] border-b-[4px] border-black rounded-b-full" />
-                </div>
-
-                {/* METAL SHINE */}
-                <div className="absolute top-[15px] left-[15px] w-[18px] h-[70px] bg-white/70 blur-sm rounded-full rotate-[18deg]" />
-
-                {/* SHADOW */}
-                <div className="absolute bottom-[-10px] left-1/2 -translate-x-1/2 w-[70px] h-[14px] bg-black/20 blur-lg rounded-full" />
-            </div>
+                🤖
+            </button>
 
             {/* ANIMATIONS */}
             <style>
                 {`
-                @keyframes clippyFloat {
-                    0%, 100% {
-                        transform: translateY(0px) rotate(-2deg);
+                @keyframes fadeIn {
+                    from {
+                        opacity: 0;
+                        transform: translateY(12px);
                     }
 
-                    50% {
-                        transform: translateY(-7px) rotate(2deg);
+                    to {
+                        opacity: 1;
+                        transform: translateY(0);
                     }
                 }
 
-                @keyframes clippyBubble {
+                @keyframes float {
                     0%, 100% {
                         transform: translateY(0px);
                     }
 
                     50% {
-                        transform: translateY(-4px);
+                        transform: translateY(-6px);
                     }
                 }
                 `}
