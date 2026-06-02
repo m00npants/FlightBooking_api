@@ -286,10 +286,7 @@ function SkyNavAI() {
                     "Content-Type": "application/json",
                 },
                 body: JSON.stringify({
-                    messages: updatedMessages.map((m) => ({
-                        role: m.role,
-                        content: m.text,
-                    })),
+                    message: input,
                 }),
             });
 
